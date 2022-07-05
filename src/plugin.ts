@@ -1,5 +1,4 @@
 import { registerCommercePlugin } from '@builder.io/commerce-plugin-tools';
-import { Seller } from '@builder.io/commerce-plugin-tools/dist/types/interfaces/resource';
 import pkg from '../package.json';
 import appState from '@builder.io/app-context';
 
@@ -58,6 +57,12 @@ registerCommercePlugin(
       isActive: seller.isActive     
     });
 
+    const transformCluster = (cluster: any) => ({
+      id: cluster[0].id,
+      title: cluster[0].clusterName,
+      handle: ''  
+    });
+
     const service = {
       seller: {
         async findById(id: string) {
@@ -81,7 +86,7 @@ registerCommercePlugin(
           });
 
           const sellers = await response?.items.map(({id, name, isActive}: any) => ({ id, title: name, isActive}))
-          return sellers as Seller[];
+          return sellers
         },
 
         getRequestObject(id: string) {
@@ -93,6 +98,46 @@ registerCommercePlugin(
             },
             options: {
               seller: id,
+            },
+          };
+        },
+      },
+
+      cluster: {
+        async findById(id: string) {
+          const key = `${id}clusterId`;
+          // https://{accountName}.{environment}.com.br/api/dataentities/{dataEntityName}/search
+          const cluster =
+            basicCache.get(key) ||
+            (await fetch(baseUrl(`api/dataentities/CC/search?id=${id}`), { headers })
+              .then(res => res.json())
+              .then(transformCluster)
+            );
+          
+          basicCache.set(key, cluster);
+          return cluster;
+        },
+                
+        async search() {
+          const response: any = await fetch(
+            baseUrl(`/api/dataentities/CC/search?_fields=clusterName,id`), {headers,}
+          ).then(res => {
+            return res.json();
+          });
+
+          const cluster = await response?.map(({clusterName, id}: any) => ({ id, title: clusterName}))
+          return cluster;
+        },
+
+        getRequestObject(id: string) {
+          return {
+            '@type': '@builder.io/core:Request' as const,
+            request: {
+              url: baseUrl(`api/dataentities/CC/search?id=${id}`),
+              headers,
+            },
+            options: {
+              cluster: id,
             },
           };
         },
