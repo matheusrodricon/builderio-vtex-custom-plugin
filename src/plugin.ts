@@ -58,7 +58,7 @@ registerCommercePlugin(
     });
 
     const transformCluster = (cluster: any) => ({
-      id: cluster[0].id,
+      id: cluster[0].clusterName.toLowerCase(),
       title: cluster[0].clusterName,
       handle: ''  
     });
@@ -103,13 +103,13 @@ registerCommercePlugin(
         },
       },
 
-      cluster: {
+      clusterNew: {
         async findById(id: string) {
           const key = `${id}clusterId`;
           // https://{accountName}.{environment}.com.br/api/dataentities/{dataEntityName}/search
           const cluster =
             basicCache.get(key) ||
-            (await fetch(baseUrl(`api/dataentities/CC/search?id=${id}`), { headers })
+            (await fetch(baseUrl(`api/dataentities/CC/search?clusterName=${id}`), { headers })
               .then(res => res.json())
               .then(transformCluster)
             );
@@ -120,12 +120,12 @@ registerCommercePlugin(
                 
         async search() {
           const response: any = await fetch(
-            baseUrl(`/api/dataentities/CC/search?_fields=clusterName,id`), {headers,}
+            baseUrl(`/api/dataentities/CC/search?_fields=clusterName,`), {headers,}
           ).then(res => {
             return res.json();
           });
 
-          const cluster = await response?.map(({clusterName, id}: any) => ({ id, title: clusterName}))
+          const cluster = await response?.map(({clusterName}: any) => ({ id: clusterName.toLowerCase(), title: clusterName}))
           return cluster;
         },
 
@@ -133,7 +133,7 @@ registerCommercePlugin(
           return {
             '@type': '@builder.io/core:Request' as const,
             request: {
-              url: baseUrl(`api/dataentities/CC/search?id=${id}`),
+              url: baseUrl(`api/dataentities/CC/search?clusterName=${id}`),
               headers,
             },
             options: {
