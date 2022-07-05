@@ -103,7 +103,7 @@ registerCommercePlugin(
         },
       },
 
-      clusterNew: {
+      cluster: {
         async findById(id: string) {
           const key = `${id}clusterId`;
           // https://{accountName}.{environment}.com.br/api/dataentities/{dataEntityName}/search
